@@ -1,4 +1,5 @@
 const User = require("../models/user"),
+token = process.env.TOKEN || "recipeT0k3n";
 passport = require("passport"),
   getUserParams = body => {
     return {
@@ -159,5 +160,20 @@ module.exports = {
         next();
       }
     });
+  },
+  verifyToken: (req, res, next) => {
+    let token = req.query.apiToken;
+    if (token) {
+      User.findOne({apiToken: token})
+        .then(user => {
+          if (user) next();
+          else next(new Error("Invalid API token."));
+        })
+        .catch(error => {
+          next(new Error(error.message));
+        });
+    } else {
+      next(new Error("Invalid API token"));
+    }
   }
 };
