@@ -18,10 +18,13 @@ const express = require("express"),
 
 mongoose.Promise = global.Promise;
 
-mongoose.connect(
-  "mongodb://localhost:27017/recipe_db",
-  { useNewUrlParser: true }
-);
+const options = {
+	useUnifiedTopology : true,
+	useNewUrlParser : true
+}
+
+mongoose.connect('mongodb://127.0.0.1/recipe_db',options)
+
 mongoose.set("useCreateIndex", true);
 
 const db = mongoose.connection;
