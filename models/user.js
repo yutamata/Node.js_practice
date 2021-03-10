@@ -1,5 +1,6 @@
 const mongoose = require("mongoose"),
   { Schema } = mongoose,
+  randToken = require("rand-token"),
   Subscriber = require("./subscriber"),
   bcrypt = require("bcrypt"),
   passportLocalMongoose = require("passport-local-mongoose"),
@@ -26,6 +27,9 @@ const mongoose = require("mongoose"),
         min: [1000, "Zip code too short"],
         max: 99999
       },
+      apiToken: {
+        type: String
+      },
       password: {
         type: String,
         required: true
@@ -41,31 +45,40 @@ const mongoose = require("mongoose"),
     }
   );
 
-userSchema.virtual("fullName").get(function() {
-  return `${this.name.first} ${this.name.last}`;
-});
+  userSchema.virtual("fullName").get(function() {
+    return `${this.name.first} ${this.name.last}`;
+  });
 
-userSchema.pre("save", function(next) {
-  let user = this;
-  if (user.subscribedAccount === undefined) {
-    Subscriber.findOne({
-      email: user.email
-    })
-      .then(subscriber => {
-        user.subscribedAccount = subscriber;
-        next();
+  userSchema.pre("save", function(next) {
+    let user = this;
+    if (user.subscribedAccount === undefined) {
+      Subscriber.findOne({
+        email: user.email
       })
-      .catch(error => {
-        console.log(`Error in connecting subscriber:${error.message}`);
-        next(error);
-      });
-  } else {
-    next();
-  }
-});
+        .then(subscriber => {
+          user.subscribedAccount = subscriber;
+          next();
+        })
+        .catch(error => {
+          console.log(`Error in connecting subscriber:${error.message}`);
+          next(error);
+        });
+    } else {
+      next();
+    }
 
-userSchema.plugin(passportLocalMongoose, {
-  usernameField: "email"
-});
+  });  
+
+  userSchema.pre("save", function(next) {
+    let user =this;
+    if (!user.apiToken) user.apiToken = randToken.generate(16);
+    next();
+  });
+
+  userSchema.plugin(passportLocalMongoose, {
+    usernameField: "email"
+  });
+
+
 
 module.exports = mongoose.model("User", userSchema);
